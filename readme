@@ -1,0 +1,19 @@
+How to Set Up a Laravel with Docker Compose, MySQL, and Nginx — Part 01
+
+https://medium.com/@leoonofre.oliversoft/how-to-set-up-a-laravel-with-docker-compose-mysql-and-nginx-part-01-dd0255692b9d
+
+~> docker-compose up
+
+
+sudo chown -R www-data:www-data ~/code/laravel12/app/storage
+sudo chmod -R 775 ~/code/laravel12/app/storage
+
+sudo chown -R www-data:www-data ~/code/laravel12/dbdata
+sudo chmod -R 775 ~/code/laravel12/dbdata
+
+curl http://localhost
+
+
+*******************************************
+
+
