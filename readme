@@ -15,5 +15,51 @@ curl http://localhost
 
 
 *******************************************
+MYSQL_ROOT_PASSWORD: laravel_project_pass
 
+** Ver en docker-compose.yml
+root@ecb98064bfca:/# mysql -u root -plaravel_project_pass
+
+mysql> SHOW DATABASES;
+
+
+*******************************************
+GIT Init commit
+*******************************************
+LARAVEL DUSK
+
+
+php -r "require 'vendor/autoload.php'; use Facebook\WebDriver\Remote\RemoteWebDriver; echo RemoteWebDriver::create('http://localhost:4444', DesiredCapabilities::chrome())->getCapabilities()->getVersion();"
+
+
+sudo apt-get update
+sudo apt-get install php-curl
+
+composer require php-webdriver/webdriver
+
+composer require --dev laravel/dusk
+php artisan dusk:install
+
+
+sudo chown acaty:acaty .phpunit.result.cache
+sudo chmod 0755 .phpunit.result.cache
+
+
+sudo chmod -R 0755 vendor/laravel/dusk/bin/ 
+
+php artisan dusk:chrome-driver --detect
+
+INICIAR chromedriver
+
+./vendor/laravel/dusk/bin/chromedriver-linux
+
+
+*** https://medium.com/@ryanharmon/how-to-configure-laravel-dusk-chromedriver-30508bcdea9d
+
+*** Limpiar laravel.log
+sudo sh -c "echo '' > storage/logs/laravel.log"
+
+???????????? php artisan dusk:chrome-driver 138.0.7204.169 
+
+sudo php artisan dusk
 
