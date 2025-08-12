@@ -1,0 +1,10 @@
+> sudo apt update
+
+*** En .env.dusk.local
+DUSK_DRIVER_URL=http://localhost:9515
+
+A> php artisan serve
+
+B> chromedriver --port=9515
+
+C> php artisan dusk
