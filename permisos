@@ -1,0 +1,6 @@
+PROJECT=laravel12
+USER=acaty
+
+sudo chown -R ${USER}:${USER} ~/code/${PROJECT}/app/storage
+sudo chmod -R 775 ~/code/${PROJECT}/app/storage
+

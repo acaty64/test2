@@ -1,103 +1,60 @@
-version: '3'
+#version: '3'
 services:
-
-  #PHP Service
-  laravel_project:
+  app:
+    container_name: app
     build:
-      context: .
+      context: ./docker
       dockerfile: Dockerfile
-    container_name: laravel_project
-    restart: unless-stopped
-    tty: true
-    environment:
-      SERVICE_NAME: laravel_project
-      SERVICE_TAGS: dev
-      DB_CONNECTION: mysql
-      DB_HOST: laravel_project_db
-      DB_PORT: 3306
-      DB_DATABASE: laravel_project
-      DB_USERNAME: laravel_project_user
-      DB_PASSWORD: laravel_project_db_pass
-    working_dir: /var/www
+    image: acaty/test:latest
     volumes:
-      - ./app:/var/www
-      - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
-    depends_on:
-      - laravel_project_db
-    networks:
-      - laravel_project_network
-
-  #Nginx Service
-  laravel_project_webserver:
-    image: nginx:alpine
-    container_name: laravel_project_webserver
-    restart: unless-stopped
-    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
-    tty: true
+      - .:/var/www/html:rw
+      # - .:/usr/share/nginx/html:rw
+      # - ./docker/nginx/default.conf:/etc/nginx/sites-available/default
+      # - ./docker/etc/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
     ports:
-      - "80:80"
-    volumes:
-      - ./app:/var/www
-      - ./nginx/conf.d/:/etc/nginx/conf.d/
+     - "${APP_PORT}:80"
+     - "6001:6001"
     networks:
-      - laravel_project_network
-
-  #MySQL Service
-  laravel_project_db:
-    image: mysql:8.0-bookworm
-    container_name: laravel_project_db
-    restart: unless-stopped
-    tty: true
+     - stydenet
+  # node:
+  #   container_name: node
+  #   image: node:12.14
+  #   restart: unless-stopped
+  #   tty: true
+  #   working_dir: /var/www/html
+  #   volumes:
+  #    - .:/var/www/html
+  #   networks:
+  #    - stydenet
+  mysql:
+    container_name: mysql
+    image: mysql:5.7
     ports:
-      - "3306:3306"
+     - "${DB_PORT}:3306"
     environment:
-      MYSQL_DATABASE: laravel_project
-      MYSQL_ROOT_PASSWORD: laravel_project_pass
-      MYSQL_USER: laravel_project_user
-      MYSQL_PASSWORD: laravel_project_db_pass
-      SERVICE_TAGS: dev
-      SERVICE_NAME: mysql
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE}"
+      MYSQL_USER: "${MYSQL_USER}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
     volumes:
-      - ./dbdata:/var/lib/mysql
-      - ./mysql/my.cnf:/etc/mysql/my.cnf
+     - /var/lib/mysql:/var/lib/mysql
+     # - mysqldata:/var/lib/mysql
     networks:
-      - laravel_project_network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "laravel_project_user", "-plaravel_project_db_pass"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  #Cron Service
-  laravel_project_cron:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: laravel_project_cron
-    restart: unless-stopped
-    tty: true
-    environment:
-      SERVICE_NAME: laravel_project
-      SERVICE_TAGS: dev
-      DB_CONNECTION: mysql
-      DB_HOST: laravel_project_db
-      DB_PORT: 3306
-      DB_DATABASE: laravel_project
-      DB_USERNAME: laravel_project_user
-      DB_PASSWORD: laravel_project_db_pass
-    volumes:
-      - ./app:/var/www
-    entrypoint: ["/bin/sh", "-c", "while :; do php /var/www/artisan schedule:run; sleep 60; done"]
-    depends_on:
-      laravel_project_db:
-        condition: service_healthy
-    networks:
-      - laravel_project_network
-
-#Docker Networks
+     - stydenet
+  # redis:
+  #   container_name: redis
+  #   image: redis:alpine
+  #   restart: unless-stopped
+  #   tty: true
+  #   volumes:
+  #    - redisdata:/data
+  #   networks:
+  #    - stydenet
 networks:
-  laravel_project_network:
-    driver: bridge
+  stydenet:
+    driver: "bridge"
 volumes:
-  dbdata:
-    driver: local
+  # mysqldata:
+  #   driver: "local"
+  redisdata:
+    driver: "local"

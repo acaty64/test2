@@ -1,67 +1,82 @@
-FROM php:8.3.12-fpm
+### https://www.google.com/search?q=crear+un+dockerfile+ubuntu+22.04+php8.3+con+nginx+para+laravel12+y+supervisord&sca_esv=63ad467223b51100&rlz=1C1PRFI_enPE1063PE1063&sxsrf=AE3TifMX0iQ8DOjIJareVKP_9aPhX8VTfg%3A1755640281569&ei=2fGkaLW7IrvS1sQPkLyISQ&ved=0ahUKEwj1i9ja7ZePAxU7qZUCHRAeIgkQ4dUDCBA&uact=5&oq=crear+un+dockerfile+ubuntu+22.04+php8.3+con+nginx+para+laravel12+y+supervisord&gs_lp=Egxnd3Mtd2l6LXNlcnAiTmNyZWFyIHVuIGRvY2tlcmZpbGUgdWJ1bnR1IDIyLjA0IHBocDguMyBjb24gbmdpbnggcGFyYSBsYXJhdmVsMTIgeSBzdXBlcnZpc29yZEikH1CpAliPHXABeACQAQCYAWOgAaEJqgECMTS4AQPIAQD4AQGYAgCgAgCYAwCIBgGSBwCgB9gMsgcAuAcAwgcAyAcA&sclient=gws-wiz-serp
 
-# Set working directory
-WORKDIR /var/www
+# Usa la imagen base de Ubuntu 22.04
+FROM ubuntu:22.04
 
-# Install dependencies
+# Establece la zona horaria
+ENV TZ=America/Los_Angeles
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Actualiza el sistema e instala dependencias
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpng-dev \
-    libjpeg62-turbo-dev \
-    libfreetype6-dev \
-    locales \
-    zip \
-    jpegoptim optipng pngquant gifsicle \
-    vim \
-    unzip \
-    git \
+    software-properties-common \
+    apt-transport-https \
+    ca-certificates \
     curl \
-    libzip-dev \
-    npm \
-    cron \
-    iputils-ping
+    gnupg \
+    lsb-release \
+    nginx \
+    supervisor
 
-RUN npm install --global yarn
+RUN add-apt-repository -y ppa:ondrej/php \
+    && apt-get update \
+    && apt-get install -y \
+    php8.3 \
+    php8.3-fpm \
+    php8.3-cli \
+    php8.3-mysql \
+    php8.3-xml \
+    php8.3-zip \
+    php8.3-mbstring \
+    php8.3-bcmath \
+    php8.3-gd \
+    php8.3-curl \
+    composer \
+    git \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN curl -sL https://deb.nodesource.com/setup_22.x | bash - 
-RUN apt-get install -y nodejs
+# Instala Node.js y npm
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+RUN apt-get update && apt-get install -y nodejs
+RUN npm install -g npm
 
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+# Configura Nginx
+COPY ./docker/nginx/default.conf /etc/nginx/sites-available/default
+# RUN ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
+# RUN rm /etc/nginx/sites-enabled/default
 
-# Install extensions
-RUN docker-php-ext-install pdo_mysql gd zip
+# Configura Supervisor
+COPY ./docker/etc/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Install composer
+# Crea un directorio para la aplicación Laravel
+#RUN mkdir -p /var/www/laravel
+
+# Copia los archivos de la aplicación Laravel
+WORKDIR /var/www/html
+# COPY . /var/www/html
+
+# Instala las dependencias de Laravel
+RUN apt-get update && apt-get install -y curl unzip
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+# RUN composer update --no-interaction --optimize-autoloader --no-dev
 
-# Copy existing application directory contents
-COPY --chown=www-data:www-data app /var/www
+# Genera la clave de la aplicación
+# RUN php artisan key:generate
 
-# Copy cronjob file
-COPY cronjob /etc/cron.d/laravel-cron
+# Ejecuta las migraciones
+# RUN php artisan migrate --force
 
-# Apply appropriate permissions to the cronjob file
-RUN chmod 0644 /etc/cron.d/laravel-cron
+# Cambia el usuario y grupo para nginx y php-fpm
+# RUN chown -R www-data:www-data /var/www/html
+# RUN find /var/www/html -type d -print0 | xargs -0 chmod 775
+# RUN find /var/www/html -type f -print0 | xargs -0 chmod 664
 
-# Apply ownership to the log file for cron
-RUN touch /var/log/cron.log && chown -f www-data:www-data /var/log/cron.log
+# Define el puerto para Nginx
+EXPOSE 80
 
-# Start cron and PHP-FPM together
-CMD if [ ! -f /var/www/.env ]; then \
-        composer create-project --prefer-dist laravel/laravel .; \
-    fi && \
-    cron && php-fpm
+# Crea ruta para el socket de PHP-FPM
+RUN mkdir -p /run/php
 
-# Fetch the latest stable Chrome version and install Chrome and ChromeDriver
-RUN CHROME_VERSION=$(curl -sSL https://googlechromelabs.github.io/chrome-for-testing/ | awk -F 'Version:' '/Stable/ {print $2}' | awk '{print $1}' | sed 's/<code>//g; s/<\/code>//g') && \
-    CHROME_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip" && \
-    echo "Fetching Chrome version: ${CHROME_VERSION}" && \
-    curl -sSL ${CHROME_URL} -o /tmp/chrome-linux64.zip && \
-    mkdir -p /opt/google/chrome && \
-    mkdir -p /usr/local/bin && \
-    unzip -q /tmp/chrome-linux64.zip -d /opt/google/chrome && \
-    rm /tmp/chrome-linux64.zip
-    
-# Expose port 9000
-EXPOSE 9000
+# Comando para iniciar la aplicación
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

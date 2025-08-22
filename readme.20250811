@@ -8,3 +8,17 @@ A> php artisan serve
 B> chromedriver --port=9515
 
 C> php artisan dusk
+
+
+*****************************************
+https://youtu.be/2M23skx2TK8
+
+
+https://medium.com/@tushargugnani_54389/crawling-website-using-laravel-dusk-spider-bbbbe487a21
+
+
+*********** PROBLEMAS CON PERMISOS EN LAS CARPETAS
+
+sudo chown -R www-data:www-data storage bootstrap/cache
+
+sudo chmod -R 775 storage bootstrap/cache

@@ -1,0 +1,23 @@
+
+# RUN composer update --no-interaction --optimize-autoloader --no-dev
+docker exec app git config --global --add safe.directory /var/www/html
+docker exec app composer install --no-interaction --optimize-autoloader --no-dev
+
+docker exec app composer dump-autoload
+
+# Cambia el usuario y grupo para nginx y php-fpm
+docker exec app chown -R www-data:www-data /var/www/html/storage
+docker exec app chown -R www-data:www-data /var/www/html/bootstrap/cache
+
+docker exec app chmod -R 775 /var/www/html/storage
+docker exec app chmod -R 775 /var/www/html/bootstrap/cache
+
+# Genera la clave de la aplicación
+docker exec app php artisan key:generate
+
+# Ejecuta las migraciones
+# RUN php artisan migrate --force
+
+# docker exec -it app bash 
+# sudo chown acaty:acaty indocker
+# sudo chmod +x indocker
