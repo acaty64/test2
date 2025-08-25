@@ -1,82 +1,55 @@
-### https://www.google.com/search?q=crear+un+dockerfile+ubuntu+22.04+php8.3+con+nginx+para+laravel12+y+supervisord&sca_esv=63ad467223b51100&rlz=1C1PRFI_enPE1063PE1063&sxsrf=AE3TifMX0iQ8DOjIJareVKP_9aPhX8VTfg%3A1755640281569&ei=2fGkaLW7IrvS1sQPkLyISQ&ved=0ahUKEwj1i9ja7ZePAxU7qZUCHRAeIgkQ4dUDCBA&uact=5&oq=crear+un+dockerfile+ubuntu+22.04+php8.3+con+nginx+para+laravel12+y+supervisord&gs_lp=Egxnd3Mtd2l6LXNlcnAiTmNyZWFyIHVuIGRvY2tlcmZpbGUgdWJ1bnR1IDIyLjA0IHBocDguMyBjb24gbmdpbnggcGFyYSBsYXJhdmVsMTIgeSBzdXBlcnZpc29yZEikH1CpAliPHXABeACQAQCYAWOgAaEJqgECMTS4AQPIAQD4AQGYAgCgAgCYAwCIBgGSBwCgB9gMsgcAuAcAwgcAyAcA&sclient=gws-wiz-serp
+# Base con PHP-FPM 8.3
+FROM php:8.3-fpm
 
-# Usa la imagen base de Ubuntu 22.04
-FROM ubuntu:22.04
+# Instalar dependencias del sistema
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      nginx supervisor cron git unzip curl wget gnupg ca-certificates \
+      libnss3 libasound2 libxdamage1 libxrandr2 libxkbcommon0 \
+      libatk-bridge2.0-0 libgtk-3-0 libgbm1 \
+      libicu-dev pkg-config libzip-dev \
+ && rm -rf /var/lib/apt/lists/*
 
-# Establece la zona horaria
-ENV TZ=America/Los_Angeles
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+# Instalar Chromium y ChromeDriver (alineados desde el repo oficial)
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends chromium chromium-driver \
+ && rm -rf /var/lib/apt/lists/*
 
-# Actualiza el sistema e instala dependencias
-RUN apt-get update && apt-get install -y \
-    software-properties-common \
-    apt-transport-https \
-    ca-certificates \
-    curl \
-    gnupg \
-    lsb-release \
-    nginx \
-    supervisor
+# ⚡ Eliminar cualquier chromedriver viejo y forzar symlink al correcto
+RUN rm -f /usr/local/bin/chromedriver \
+ && ln -s /usr/bin/chromedriver /usr/local/bin/chromedriver
 
-RUN add-apt-repository -y ppa:ondrej/php \
-    && apt-get update \
-    && apt-get install -y \
-    php8.3 \
-    php8.3-fpm \
-    php8.3-cli \
-    php8.3-mysql \
-    php8.3-xml \
-    php8.3-zip \
-    php8.3-mbstring \
-    php8.3-bcmath \
-    php8.3-gd \
-    php8.3-curl \
-    composer \
-    git \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# Extensiones PHP requeridas por Laravel
+RUN docker-php-ext-install \
+      pdo_mysql bcmath intl zip opcache \
+ && pecl install redis \
+ && docker-php-ext-enable redis
 
-# Instala Node.js y npm
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-RUN apt-get update && apt-get install -y nodejs
-RUN npm install -g npm
+# Composer desde imagen oficial
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Configura Nginx
-COPY ./docker/nginx/default.conf /etc/nginx/sites-available/default
-# RUN ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
-# RUN rm /etc/nginx/sites-enabled/default
+# Nginx config
+RUN mkdir -p /run/nginx /var/www/html
+COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
+RUN rm -f /etc/nginx/sites-enabled/default || true \
+ && rm -f /etc/nginx/sites-available/default || true
 
-# Configura Supervisor
-COPY ./docker/etc/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+# PHP-FPM pool config
+COPY docker/php/www.conf /usr/local/etc/php-fpm.d/www.conf
 
-# Crea un directorio para la aplicación Laravel
-#RUN mkdir -p /var/www/laravel
+# Supervisor config
+COPY docker/etc/supervisord.conf /etc/supervisor/supervisord.conf
+COPY docker/etc/supervisor/*.conf /etc/supervisor/conf.d/
 
-# Copia los archivos de la aplicación Laravel
+# Permisos del código
+RUN chown -R www-data:www-data /var/www/html
+
 WORKDIR /var/www/html
+
+# Si no montas volumen, puedes copiar código aquí:
 # COPY . /var/www/html
 
-# Instala las dependencias de Laravel
-RUN apt-get update && apt-get install -y curl unzip
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-# RUN composer update --no-interaction --optimize-autoloader --no-dev
-
-# Genera la clave de la aplicación
-# RUN php artisan key:generate
-
-# Ejecuta las migraciones
-# RUN php artisan migrate --force
-
-# Cambia el usuario y grupo para nginx y php-fpm
-# RUN chown -R www-data:www-data /var/www/html
-# RUN find /var/www/html -type d -print0 | xargs -0 chmod 775
-# RUN find /var/www/html -type f -print0 | xargs -0 chmod 664
-
-# Define el puerto para Nginx
 EXPOSE 80
 
-# Crea ruta para el socket de PHP-FPM
-RUN mkdir -p /run/php
-
-# Comando para iniciar la aplicación
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Arranque con Supervisor (maneja nginx, php-fpm y chromedriver)
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]

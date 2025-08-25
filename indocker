@@ -1,19 +1,19 @@
 
 # RUN composer update --no-interaction --optimize-autoloader --no-dev
-docker exec app git config --global --add safe.directory /var/www/html
-docker exec app composer install --no-interaction --optimize-autoloader --no-dev
+docker exec -it app git config --global --add safe.directory /var/www/html
+docker exec -it app composer install
 
-docker exec app composer dump-autoload
+docker exec -it app composer dump-autoload
 
 # Cambia el usuario y grupo para nginx y php-fpm
-docker exec app chown -R www-data:www-data /var/www/html/storage
-docker exec app chown -R www-data:www-data /var/www/html/bootstrap/cache
+docker exec -it app chown -R www-data:www-data /var/www/html/storage
+docker exec -it app chown -R www-data:www-data /var/www/html/bootstrap/cache
 
-docker exec app chmod -R 775 /var/www/html/storage
-docker exec app chmod -R 775 /var/www/html/bootstrap/cache
+docker exec -it app chmod -R 775 /var/www/html/storage
+docker exec -it app chmod -R 775 /var/www/html/bootstrap/cache
 
 # Genera la clave de la aplicación
-docker exec app php artisan key:generate
+docker exec -it app php artisan key:generate
 
 # Ejecuta las migraciones
 # RUN php artisan migrate --force
@@ -21,3 +21,14 @@ docker exec app php artisan key:generate
 # docker exec -it app bash 
 # sudo chown acaty:acaty indocker
 # sudo chmod +x indocker
+
+# Comprueba que Chromium y ChromeDriver están instalados y son compatibles
+
+docker exec -it app bash -c which chromedriver
+docker exec -it app bash -c "./check_chromium.sh"
+docker exec -it app /usr/bin/chromedriver --version
+
+docker exec -it app supervisorctl status
+
+# Elimina binarios viejos de Dusk (si los hubiera) para forzar a usar el chromedriver del sistema
+docker exec -it app rm -rf vendor/laravel/dusk/bin/*

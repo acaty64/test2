@@ -55,10 +55,13 @@ class DuskTestCase extends TestCase
      */
     protected function driver(): RemoteWebDriver
     {
-        $options = (new ChromeOptions)->addArguments(collect([
-            $this->shouldStartMaximized() ? '--start-maximized' : '--window-size=1920,1080',
-            '--disable-search-engine-choice-screen',
-            '--disable-smooth-scrolling',
+        $options = (new ChromeOptions)->addArguments([
+                '--disable-gpu',
+                '--headless=new',
+                '--no-sandbox',
+                '--disable-dev-shm-usage',
+                '--window-size=1920,1080',
+                '--remote-allow-origins=*'   // ⚡ importante en Chromium recientes
         ])->unless($this->hasHeadlessDisabled(), function (Collection $items) {
             return $items->merge([
                 '--disable-gpu',
@@ -72,7 +75,12 @@ class DuskTestCase extends TestCase
             $_ENV['DUSK_DRIVER_URL'] ?? 'http://localhost:9515',
             DesiredCapabilities::chrome()->setCapability(
                 ChromeOptions::CAPABILITY, $options
-            )
+            ),
+                5000,
+                10000,
+                null,
+                null,
+                $driverPath = $_ENV['DUSK_DRIVER_PATH'] ?? null
         );
     }
 

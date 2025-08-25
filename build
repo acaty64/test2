@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # chmod +x build
 # docker build -f app/Dockerfile -t acaty/test:latest ./app
-docker build -f Dockerfile -t acaty/test:latest .
+# docker system prune -f
+docker build -f Dockerfile -t acaty/test:latest --no-cache .
 # docker build -f Dockerfile -t acaty/test:latest .

@@ -16,11 +16,11 @@
     "require-dev": {
         "facade/ignition": "^2.5",
         "fakerphp/faker": "^1.9.1",
-        "laravel/dusk": "*",
+        "laravel/dusk": "^6.25",
         "laravel/sail": "^1.0.1",
         "mockery/mockery": "^1.4.4",
         "nunomaduro/collision": "^5.10",
-        "phpunit/phpunit": "^9.5.10"
+        "phpunit/phpunit": "^9.6"
     },
     "autoload": {
         "psr-4": {
@@ -57,7 +57,11 @@
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
-        "sort-packages": true
+        "sort-packages": true,
+        "bin-compat": "full",
+        "allow-plugins": {
+            "laravel/dusk": false
+        }
     },
     "minimum-stability": "dev",
     "prefer-stable": true
