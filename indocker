@@ -23,12 +23,14 @@ docker exec -it app php artisan key:generate
 # sudo chmod +x indocker
 
 # Comprueba que Chromium y ChromeDriver están instalados y son compatibles
-
-docker exec -it app bash -c which chromedriver
-docker exec -it app bash -c "./check_chromium.sh"
-docker exec -it app /usr/bin/chromedriver --version
+# docker exec -it app bash -c which chromedriver
+# docker exec -it app bash -c "./check_chromium.sh"
+# docker exec -it app /usr/bin/chromedriver --version
 
 docker exec -it app supervisorctl status
 
 # Elimina binarios viejos de Dusk (si los hubiera) para forzar a usar el chromedriver del sistema
 docker exec -it app rm -rf vendor/laravel/dusk/bin/*
+
+docker exec -it app ./check_chromium.sh
+docker exec -it app ./check_supervisor.sh

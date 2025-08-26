@@ -8,7 +8,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: acaty/test:latest
+    image: acaty/test:selenium
+    restart: unless-stopped
     volumes:
       - ./:/var/www/html:rw
     ports:
@@ -49,10 +50,31 @@ services:
     networks:
       - stydenet
 
+  selenium:
+    image: selenium/standalone-chrome:latest
+    shm_size: 2gb   # evita errores de memoria compartida
+    ports:
+      - "4444:4444"
+    networks:
+      - stydenet
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - stydenet
+
 networks:
   stydenet:
     driver: bridge
-
+    
 volumes:
   mysqldata:
   # redisdata:

@@ -10,15 +10,6 @@ RUN apt-get update \
       libicu-dev pkg-config libzip-dev \
  && rm -rf /var/lib/apt/lists/*
 
-# Instalar Chromium y ChromeDriver (alineados desde el repo oficial)
-RUN apt-get update \
- && apt-get install -y --no-install-recommends chromium chromium-driver \
- && rm -rf /var/lib/apt/lists/*
-
-# ⚡ Eliminar cualquier chromedriver viejo y forzar symlink al correcto
-RUN rm -f /usr/local/bin/chromedriver \
- && ln -s /usr/bin/chromedriver /usr/local/bin/chromedriver
-
 # Extensiones PHP requeridas por Laravel
 RUN docker-php-ext-install \
       pdo_mysql bcmath intl zip opcache \
