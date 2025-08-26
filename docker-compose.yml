@@ -17,7 +17,8 @@ services:
     env_file:
       - .env
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     networks:
       - stydenet
 
@@ -33,7 +34,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-root}"
       MYSQL_DATABASE: "${DB_DATABASE:-laravel}"
-      MYSQL_USER: "${DB_USER:-laravel}"
+      MYSQL_USER: "${DB_USERNAME:-laravel}"
       MYSQL_PASSWORD: "${DB_PASSWORD:-secret}"
       TZ: "America/Lima"
     ports:

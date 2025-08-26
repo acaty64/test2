@@ -2,10 +2,10 @@
 
 export APP_PORT=${APP_PORT:-80}
 export MYSQL_PORT=${DB_PORT:-3306}
-export MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-secret}
-export MYSQL_DATABASE=${MYSQL_DATABASE:-api}
-export MYSQL_USER=${MYSQL_USER:-root}
-export MYSQL_PASSWORD=${MYSQL_PASSWORD:-secret}
+export MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-secret}
+export MYSQL_DATABASE=${DB_DATABASE:-api}
+export MYSQL_USER=${DB_USERNAME:-root}
+export MYSQL_PASSWORD=${DB_PASSWORD:-secret}
 
 
 COMPOSE="docker-compose"
